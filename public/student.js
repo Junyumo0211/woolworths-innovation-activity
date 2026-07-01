@@ -3,6 +3,7 @@ const done = document.querySelector("#done");
 const editVote = document.querySelector("#editVote");
 const waiting = document.querySelector("#waiting");
 const studentJoinedCount = document.querySelector("#studentJoinedCount");
+const ended = document.querySelector("#ended");
 
 const voterIdKey = "woolworthsInnovationVoterId";
 const voteKey = "woolworthsInnovationVote";
@@ -11,6 +12,7 @@ let config = null;
 let choices = {};
 let currentStep = 0;
 let hasStarted = false;
+let hasEnded = false;
 let heartbeatTimer = null;
 
 function voterId() {
@@ -34,6 +36,8 @@ function optionCard(round, option, saved) {
 
 function renderStep() {
   waiting.hidden = true;
+  ended.hidden = true;
+  done.hidden = true;
   form.hidden = false;
   const round = config.rounds[currentStep];
   const isLast = currentStep === config.rounds.length - 1;
@@ -71,6 +75,25 @@ function showWaiting() {
   waiting.hidden = false;
   form.hidden = true;
   done.hidden = true;
+  ended.hidden = true;
+}
+
+function resetToWaiting(joinedCount) {
+  hasStarted = false;
+  hasEnded = false;
+  currentStep = 0;
+  choices = {};
+  localStorage.removeItem(voteKey);
+  updateJoinedCount(joinedCount);
+  showWaiting();
+}
+
+function showEnded() {
+  hasEnded = true;
+  waiting.hidden = true;
+  form.hidden = true;
+  done.hidden = true;
+  ended.hidden = false;
 }
 
 function updateJoinedCount(count) {
@@ -97,11 +120,16 @@ async function load() {
   config = await fetch("/api/config").then((res) => res.json());
   choices = JSON.parse(localStorage.getItem(voteKey) || "null") || {};
   hasStarted = config.activityStarted;
+  hasEnded = config.activityEnded;
 
   await sendPresence("/api/join");
   startHeartbeat();
 
-  if (hasStarted) {
+  if (!hasStarted && !hasEnded) {
+    resetToWaiting(0);
+  } else if (hasEnded) {
+    showEnded();
+  } else if (hasStarted) {
     renderStep();
   } else {
     showWaiting();
@@ -111,6 +139,10 @@ async function load() {
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const round = config.rounds[currentStep];
+  if (hasEnded) {
+    showEnded();
+    return;
+  }
   const selected = new FormData(form).get(round.id);
 
   if (!selected) {
@@ -135,6 +167,10 @@ form.addEventListener("submit", async (event) => {
   });
 
   if (!response.ok) {
+    if (response.status === 403) {
+      showEnded();
+      return;
+    }
     alert("Your vote could not be submitted. Please try again.");
     return;
   }
@@ -157,6 +193,14 @@ const events = new EventSource("/api/events");
 events.onmessage = (event) => {
   const data = JSON.parse(event.data);
   updateJoinedCount(data.joinedCount);
+  if (!data.activityStarted && !data.activityEnded) {
+    resetToWaiting(data.joinedCount);
+    return;
+  }
+  if (data.activityEnded) {
+    showEnded();
+    return;
+  }
   if (data.activityStarted && !hasStarted) {
     hasStarted = true;
     renderStep();

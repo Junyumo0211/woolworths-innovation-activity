@@ -5,6 +5,7 @@ const bars = document.querySelector("#bars");
 const roundTable = document.querySelector("#roundTable");
 const reset = document.querySelector("#reset");
 const startActivity = document.querySelector("#startActivity");
+const endActivity = document.querySelector("#endActivity");
 const joinStatus = document.querySelector("#joinStatus");
 
 function renderBars(data) {
@@ -49,10 +50,12 @@ function renderRounds(data) {
 function render(data) {
   responseCount.textContent = data.responseCount;
   joinStatus.textContent = data.activityStarted
-    ? `${data.joinedCount} students joined. Activity started.`
+    ? `${data.joinedCount} students joined. ${data.activityEnded ? "Voting ended." : "Activity started."}`
     : `${data.joinedCount} students joined. Waiting to start.`;
-  startActivity.disabled = data.activityStarted;
+  startActivity.disabled = data.activityStarted || data.activityEnded;
+  endActivity.disabled = !data.activityStarted || data.activityEnded;
   startActivity.textContent = data.activityStarted ? "Activity started" : "Start activity";
+  endActivity.textContent = data.activityEnded ? "Voting ended" : "End voting";
   analysisTitle.textContent = data.responseCount ? data.analysis.title : "Waiting for votes";
   analysisBody.textContent = data.responseCount
     ? data.analysis.body
@@ -76,6 +79,19 @@ startActivity.addEventListener("click", async () => {
   if (response.status === 401) {
     localStorage.removeItem("woolworthsAdminKey");
     alert("Start failed: teacher key is required or incorrect.");
+  }
+});
+
+endActivity.addEventListener("click", async () => {
+  if (!confirm("End voting for all students?")) return;
+  const key = adminKey();
+  const response = await fetch("/api/end", {
+    method: "POST",
+    headers: key ? { "x-admin-key": key } : {}
+  });
+  if (response.status === 401) {
+    localStorage.removeItem("woolworthsAdminKey");
+    alert("End failed: teacher key is required or incorrect.");
   }
 });
 
