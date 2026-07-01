@@ -86,7 +86,9 @@ const analyses = {
 };
 
 const votes = new Map();
+const joined = new Set();
 const clients = new Set();
+let activityStarted = process.env.START_OPEN === "true";
 
 function networkUrls() {
   const urls = [`http://localhost:${PORT}`];
@@ -135,6 +137,8 @@ function results() {
     totals,
     byRound,
     responseCount: votes.size,
+    joinedCount: joined.size,
+    activityStarted,
     totalChoices: Object.values(totals).reduce((sum, value) => sum + value, 0),
     leader: leaders.length === 1 ? leaders[0][0] : null,
     analysis: analyses[analysisId],
@@ -160,6 +164,11 @@ function adminAllowed(req, url) {
 function broadcast() {
   const payload = `data: ${JSON.stringify(results())}\n\n`;
   for (const client of clients) client.write(payload);
+}
+
+function startActivity() {
+  activityStarted = true;
+  broadcast();
 }
 
 function readBody(req) {
@@ -242,7 +251,13 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
 
     if (req.method === "GET" && url.pathname === "/api/config") {
-      sendJson(res, 200, { options, rounds, urls: networkUrls(), publicUrl: process.env.PUBLIC_URL || "" });
+      sendJson(res, 200, {
+        options,
+        rounds,
+        urls: networkUrls(),
+        publicUrl: process.env.PUBLIC_URL || "",
+        activityStarted
+      });
       return;
     }
 
@@ -290,12 +305,32 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === "POST" && url.pathname === "/api/join") {
+      const payload = JSON.parse(await readBody(req));
+      if (payload.voterId) joined.add(String(payload.voterId));
+      broadcast();
+      sendJson(res, 200, { ok: true, activityStarted });
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/start") {
+      if (!adminAllowed(req, url)) {
+        sendJson(res, 401, { error: "Teacher key required." });
+        return;
+      }
+      startActivity();
+      sendJson(res, 200, { ok: true });
+      return;
+    }
+
     if (req.method === "POST" && url.pathname === "/api/reset") {
       if (!adminAllowed(req, url)) {
         sendJson(res, 401, { error: "Teacher key required." });
         return;
       }
       votes.clear();
+      joined.clear();
+      activityStarted = false;
       broadcast();
       sendJson(res, 200, { ok: true });
       return;

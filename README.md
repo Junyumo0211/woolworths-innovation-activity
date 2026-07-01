@@ -59,6 +59,7 @@ https://your-app-name.onrender.com/admin
 - 学生扫码进入：`PUBLIC_URL`
 - 老师打开：`PUBLIC_URL/admin`
 - 投影结论页：`PUBLIC_URL/screen`
+- 学生会先看到等待页；老师在 dashboard 点击 `Start activity` 后，学生端会自动进入第 1 题。
 - Dashboard 会显示：
   - 实时投票人数
   - 四个方案的总票数
