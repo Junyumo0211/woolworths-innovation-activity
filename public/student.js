@@ -11,6 +11,7 @@ let config = null;
 let choices = {};
 let currentStep = 0;
 let hasStarted = false;
+let heartbeatTimer = null;
 
 function voterId() {
   let id = localStorage.getItem(voterIdKey);
@@ -76,16 +77,29 @@ function updateJoinedCount(count) {
   studentJoinedCount.textContent = count ?? 0;
 }
 
+function sendPresence(path, keepalive = false) {
+  return fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ voterId: voterId() }),
+    keepalive
+  });
+}
+
+function startHeartbeat() {
+  if (heartbeatTimer) return;
+  heartbeatTimer = setInterval(() => {
+    sendPresence("/api/heartbeat").catch(() => {});
+  }, 10000);
+}
+
 async function load() {
   config = await fetch("/api/config").then((res) => res.json());
   choices = JSON.parse(localStorage.getItem(voteKey) || "null") || {};
   hasStarted = config.activityStarted;
 
-  await fetch("/api/join", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ voterId: voterId() })
-  });
+  await sendPresence("/api/join");
+  startHeartbeat();
 
   if (hasStarted) {
     renderStep();
@@ -154,3 +168,7 @@ events.onmessage = (event) => {
     showWaiting();
   }
 };
+
+window.addEventListener("beforeunload", () => {
+  sendPresence("/api/leave", true).catch(() => {});
+});
