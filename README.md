@@ -13,6 +13,7 @@ Open:
 
 - Student page: `http://localhost:3128`
 - Teacher dashboard: `http://localhost:3128/admin`
+- Projector result screen: `http://localhost:3128/screen`
 
 ## 放进 PPT 的二维码
 
@@ -48,7 +49,7 @@ https://your-app-name.onrender.com/admin
    - Environment: `Node`
 4. 添加环境变量：
    - `ADMIN_KEY`: 自己设置一个教师密码，例如 `week5-woolworths`
-   - `PUBLIC_URL`: Render 分配给你的公网地址，例如 `https://your-app-name.onrender.com`
+   - `PUBLIC_URL`: Render 分配给你的 HTTPS 公网地址，例如 `https://your-app-name.onrender.com`
 5. 部署完成后，用 `PUBLIC_URL` 生成二维码并放进 PPT。
 
 如果第一次创建服务时还不知道 Render 地址，可以先不填 `PUBLIC_URL`。部署成功后复制 Render 给你的 URL，再进入 Render 的 `Environment` 页面补上 `PUBLIC_URL`，保存后重新部署。
@@ -57,6 +58,7 @@ https://your-app-name.onrender.com/admin
 
 - 学生扫码进入：`PUBLIC_URL`
 - 老师打开：`PUBLIC_URL/admin`
+- 投影结论页：`PUBLIC_URL/screen`
 - Dashboard 会显示：
   - 实时投票人数
   - 四个方案的总票数

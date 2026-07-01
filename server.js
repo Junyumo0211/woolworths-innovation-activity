@@ -100,6 +100,17 @@ function networkUrls() {
   return urls;
 }
 
+function publicBaseUrl(req) {
+  if (process.env.PUBLIC_URL) return process.env.PUBLIC_URL.replace(/\/+$/, "");
+
+  const forwardedHost = req.headers["x-forwarded-host"];
+  const host = forwardedHost || req.headers.host;
+  const forwardedProto = req.headers["x-forwarded-proto"];
+  const protocol = String(host || "").includes("onrender.com") ? "https" : forwardedProto || "http";
+
+  return `${protocol}://${host}`;
+}
+
 function results() {
   const totals = Object.fromEntries(options.map((option) => [option.id, 0]));
   const byRound = Object.fromEntries(
@@ -241,7 +252,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && url.pathname === "/qr.svg") {
-      const targetUrl = url.searchParams.get("url") || process.env.PUBLIC_URL || `${url.protocol}//${req.headers.host}/`;
+      const targetUrl = url.searchParams.get("url") || `${publicBaseUrl(req)}/`;
       await sendQr(res, targetUrl);
       return;
     }
@@ -315,6 +326,12 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "GET" && url.pathname === "/admin") {
       req.url = "/admin.html";
+      serveStatic(req, res);
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/screen") {
+      req.url = "/screen.html";
       serveStatic(req, res);
       return;
     }
