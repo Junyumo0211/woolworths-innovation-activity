@@ -65,11 +65,6 @@ async function load() {
   config = await fetch("/api/config").then((res) => res.json());
   choices = JSON.parse(localStorage.getItem(voteKey) || "null") || {};
   renderStep();
-
-  if (Object.keys(choices).length === config.rounds.length) {
-    form.hidden = true;
-    done.hidden = false;
-  }
 }
 
 form.addEventListener("submit", async (event) => {
