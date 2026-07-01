@@ -28,7 +28,7 @@ function optionCard(round, option, saved) {
   const checked = saved?.[round.id] === option.id ? "checked" : "";
   return `
     <label class="choice" style="--choice:${option.color}">
-      <input required type="radio" name="${round.id}" value="${option.id}" ${checked} />
+      <input type="radio" name="${round.id}" value="${option.id}" ${checked} />
       <span>${option.name}</span>
     </label>
   `;
@@ -146,7 +146,7 @@ form.addEventListener("submit", async (event) => {
   const selected = new FormData(form).get(round.id);
 
   if (!selected) {
-    alert("Please choose one option before continuing.");
+    alert("Please select one option to continue.");
     return;
   }
 
