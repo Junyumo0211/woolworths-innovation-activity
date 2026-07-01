@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Teacher Dashboard | Woolworths Innovation Activity</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="admin">
+    <main class="dashboard">
+      <header class="adminHeader">
+        <div>
+          <p class="eyebrow">Teacher dashboard</p>
+          <h1>Woolworths Innovation Investment Committee</h1>
+        </div>
+        <div class="actions">
+          <a class="button secondary" href="/api/export.csv">Export CSV</a>
+          <button id="reset" class="danger" type="button">Reset</button>
+        </div>
+      </header>
+
+      <section class="topGrid">
+        <div class="panel scanPanel">
+          <h2>Student access</h2>
+          <div id="qr" class="qr"></div>
+          <p id="joinUrl" class="joinUrl"></p>
+        </div>
+
+        <div class="panel resultPanel">
+          <div class="metric">
+            <span id="responseCount">0</span>
+            <p>student responses</p>
+          </div>
+          <h2 id="analysisTitle">Waiting for votes</h2>
+          <p id="analysisBody">The class analysis will appear after students submit their choices.</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="sectionTitle">
+          <h2>Portfolio priority</h2>
+          <p>Aggregated across all rounds</p>
+        </div>
+        <div id="bars" class="bars"></div>
+      </section>
+
+      <section class="panel">
+        <div class="sectionTitle">
+          <h2>Round-by-round pattern</h2>
+          <p>Use this to discuss why the committee's priorities shift by criterion.</p>
+        </div>
+        <div id="roundTable" class="roundTable"></div>
+      </section>
+    </main>
+
+    <script src="/admin.js"></script>
+  </body>
+</html>
