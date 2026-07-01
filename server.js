@@ -86,9 +86,10 @@ const analyses = {
 };
 
 const votes = new Map();
-const joined = new Set();
+const joined = new Map();
 const clients = new Set();
 let activityStarted = process.env.START_OPEN === "true";
+const JOINED_TIMEOUT_MS = 30000;
 
 function networkUrls() {
   const urls = [`http://localhost:${PORT}`];
@@ -114,6 +115,7 @@ function publicBaseUrl(req) {
 }
 
 function results() {
+  cleanupJoined();
   const totals = Object.fromEntries(options.map((option) => [option.id, 0]));
   const byRound = Object.fromEntries(
     rounds.map((round) => [round.id, Object.fromEntries(options.map((option) => [option.id, 0]))])
@@ -145,6 +147,23 @@ function results() {
     urls: networkUrls(),
     publicUrl: process.env.PUBLIC_URL || ""
   };
+}
+
+function touchJoined(voterId) {
+  if (!voterId) return;
+  joined.set(String(voterId), Date.now());
+}
+
+function cleanupJoined() {
+  const cutoff = Date.now() - JOINED_TIMEOUT_MS;
+  let changed = false;
+  for (const [voterId, lastSeen] of joined.entries()) {
+    if (lastSeen < cutoff) {
+      joined.delete(voterId);
+      changed = true;
+    }
+  }
+  return changed;
 }
 
 function sendJson(res, statusCode, payload) {
@@ -307,9 +326,24 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "POST" && url.pathname === "/api/join") {
       const payload = JSON.parse(await readBody(req));
-      if (payload.voterId) joined.add(String(payload.voterId));
+      touchJoined(payload.voterId);
       broadcast();
       sendJson(res, 200, { ok: true, activityStarted });
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/heartbeat") {
+      const payload = JSON.parse(await readBody(req));
+      touchJoined(payload.voterId);
+      sendJson(res, 200, { ok: true });
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/leave") {
+      const payload = JSON.parse(await readBody(req));
+      if (payload.voterId) joined.delete(String(payload.voterId));
+      broadcast();
+      sendJson(res, 200, { ok: true });
       return;
     }
 
@@ -382,3 +416,7 @@ server.listen(PORT, "0.0.0.0", () => {
   for (const url of networkUrls()) console.log(`Student voting: ${url}`);
   console.log(`Teacher dashboard: http://localhost:${PORT}/admin.html`);
 });
+
+setInterval(() => {
+  if (cleanupJoined()) broadcast();
+}, 5000);
