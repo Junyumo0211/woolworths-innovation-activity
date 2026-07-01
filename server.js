@@ -89,6 +89,7 @@ const votes = new Map();
 const joined = new Map();
 const clients = new Set();
 let activityStarted = process.env.START_OPEN === "true";
+let activityEnded = false;
 const JOINED_TIMEOUT_MS = 30000;
 
 function networkUrls() {
@@ -141,6 +142,7 @@ function results() {
     responseCount: votes.size,
     joinedCount: joined.size,
     activityStarted,
+    activityEnded,
     totalChoices: Object.values(totals).reduce((sum, value) => sum + value, 0),
     leader: leaders.length === 1 ? leaders[0][0] : null,
     analysis: analyses[analysisId],
@@ -275,7 +277,8 @@ const server = http.createServer(async (req, res) => {
         rounds,
         urls: networkUrls(),
         publicUrl: process.env.PUBLIC_URL || "",
-        activityStarted
+        activityStarted,
+        activityEnded
       });
       return;
     }
@@ -304,6 +307,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/vote") {
+      if (activityEnded) {
+        sendJson(res, 403, { error: "Voting has ended." });
+        return;
+      }
       const payload = JSON.parse(await readBody(req));
       if (!payload.voterId || typeof payload.choices !== "object") {
         sendJson(res, 400, { error: "Invalid vote payload." });
@@ -353,6 +360,18 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       startActivity();
+      activityEnded = false;
+      sendJson(res, 200, { ok: true });
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/end") {
+      if (!adminAllowed(req, url)) {
+        sendJson(res, 401, { error: "Teacher key required." });
+        return;
+      }
+      activityEnded = true;
+      broadcast();
       sendJson(res, 200, { ok: true });
       return;
     }
@@ -363,8 +382,8 @@ const server = http.createServer(async (req, res) => {
         return;
       }
       votes.clear();
-      joined.clear();
       activityStarted = false;
+      activityEnded = false;
       broadcast();
       sendJson(res, 200, { ok: true });
       return;

@@ -60,6 +60,7 @@ https://your-app-name.onrender.com/admin
 - 老师打开：`PUBLIC_URL/admin`
 - 投影结论页：`PUBLIC_URL/screen`
 - 学生会先看到等待页；老师在 dashboard 点击 `Start activity` 后，学生端会自动进入第 1 题。
+- 投票结束时，老师在 dashboard 点击 `End voting`，学生端会自动显示感谢参与的结束页。
 - Dashboard 会显示：
   - 实时投票人数
   - 四个方案的总票数
