@@ -4,18 +4,6 @@ const analysisBody = document.querySelector("#analysisBody");
 const bars = document.querySelector("#bars");
 const roundTable = document.querySelector("#roundTable");
 const reset = document.querySelector("#reset");
-const joinUrl = document.querySelector("#joinUrl");
-const qr = document.querySelector("#qr");
-
-function pickJoinUrl(urls) {
-  return urls.find((url) => !url.includes("localhost")) || urls[0];
-}
-
-function renderQr(url) {
-  const api = `/qr.svg?url=${encodeURIComponent(url)}`;
-  qr.innerHTML = `<img src="${api}" alt="QR code for student voting page" />`;
-  joinUrl.innerHTML = `<span>${url}</span><br><a href="${api}" target="_blank" rel="noreferrer">Open PPT QR code</a>`;
-}
 
 function renderBars(data) {
   const max = Math.max(...Object.values(data.totals), 1);
@@ -64,7 +52,6 @@ function render(data) {
     : "The class analysis will appear after students submit their choices.";
   renderBars(data);
   renderRounds(data);
-  renderQr(data.publicUrl || pickJoinUrl(data.urls));
 }
 
 reset.addEventListener("click", async () => {

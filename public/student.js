@@ -5,6 +5,10 @@ const editVote = document.querySelector("#editVote");
 const voterIdKey = "woolworthsInnovationVoterId";
 const voteKey = "woolworthsInnovationVote";
 
+let config = null;
+let choices = {};
+let currentStep = 0;
+
 function voterId() {
   let id = localStorage.getItem(voterIdKey);
   if (!id) {
@@ -24,32 +28,45 @@ function optionCard(round, option, saved) {
   `;
 }
 
-async function load() {
-  const config = await fetch("/api/config").then((res) => res.json());
-  const saved = JSON.parse(localStorage.getItem(voteKey) || "null");
-
+function renderStep() {
+  const round = config.rounds[currentStep];
+  const isLast = currentStep === config.rounds.length - 1;
   form.innerHTML = `
-    ${config.rounds
-      .map(
-        (round) => `
-          <section class="round">
-            <div class="roundHeader">
-              <h2>${round.title}</h2>
-              <p>${round.prompt}</p>
-            </div>
-            <div class="choices">
-              ${config.options.map((option) => optionCard(round, option, saved)).join("")}
-            </div>
-          </section>
-        `
-      )
-      .join("")}
-    <div class="submitRow">
-      <button type="submit">${saved ? "Update vote" : "Submit vote"}</button>
+    <div class="progressRow" aria-label="Voting progress">
+      <span>Round ${currentStep + 1} of ${config.rounds.length}</span>
+      <div class="stepDots">
+        ${config.rounds.map((_, index) => `<span class="stepDot ${index <= currentStep ? "active" : ""}"></span>`).join("")}
+      </div>
+    </div>
+    <section class="round">
+      <div class="roundHeader">
+        <h2>${round.title}</h2>
+        <p>${round.prompt}</p>
+      </div>
+      <div class="choices">
+        ${config.options.map((option) => optionCard(round, option, choices)).join("")}
+      </div>
+    </section>
+    <div class="navRow">
+      <button class="secondary" type="button" id="backStep" ${currentStep === 0 ? "disabled" : ""}>Back</button>
+      <button type="submit">${isLast ? "Submit vote" : "Next"}</button>
     </div>
   `;
 
-  if (saved) {
+  document.querySelector("#backStep").addEventListener("click", () => {
+    if (currentStep === 0) return;
+    currentStep -= 1;
+    renderStep();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+}
+
+async function load() {
+  config = await fetch("/api/config").then((res) => res.json());
+  choices = JSON.parse(localStorage.getItem(voteKey) || "null") || {};
+  renderStep();
+
+  if (Object.keys(choices).length === config.rounds.length) {
     form.hidden = true;
     done.hidden = false;
   }
@@ -57,8 +74,23 @@ async function load() {
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const data = new FormData(form);
-  const choices = Object.fromEntries(data.entries());
+  const round = config.rounds[currentStep];
+  const selected = new FormData(form).get(round.id);
+
+  if (!selected) {
+    alert("Please choose one option before continuing.");
+    return;
+  }
+
+  choices[round.id] = selected;
+
+  if (currentStep < config.rounds.length - 1) {
+    currentStep += 1;
+    renderStep();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+
   const payload = { voterId: voterId(), choices };
   const response = await fetch("/api/vote", {
     method: "POST",
@@ -79,6 +111,8 @@ form.addEventListener("submit", async (event) => {
 editVote.addEventListener("click", () => {
   done.hidden = true;
   form.hidden = false;
+  currentStep = 0;
+  renderStep();
 });
 
 load();
