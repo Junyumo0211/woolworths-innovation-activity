@@ -122,11 +122,11 @@ async function load() {
   hasStarted = config.activityStarted;
   hasEnded = config.activityEnded;
 
-  await sendPresence("/api/join");
+  const joinState = await sendPresence("/api/join").then((res) => res.json());
   startHeartbeat();
 
   if (!hasStarted && !hasEnded) {
-    resetToWaiting(0);
+    resetToWaiting(joinState.joinedCount);
   } else if (hasEnded) {
     showEnded();
   } else if (hasStarted) {
