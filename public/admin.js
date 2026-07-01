@@ -4,6 +4,8 @@ const analysisBody = document.querySelector("#analysisBody");
 const bars = document.querySelector("#bars");
 const roundTable = document.querySelector("#roundTable");
 const reset = document.querySelector("#reset");
+const startActivity = document.querySelector("#startActivity");
+const joinStatus = document.querySelector("#joinStatus");
 
 function renderBars(data) {
   const max = Math.max(...Object.values(data.totals), 1);
@@ -46,6 +48,11 @@ function renderRounds(data) {
 
 function render(data) {
   responseCount.textContent = data.responseCount;
+  joinStatus.textContent = data.activityStarted
+    ? `${data.joinedCount} students joined. Activity started.`
+    : `${data.joinedCount} students joined. Waiting to start.`;
+  startActivity.disabled = data.activityStarted;
+  startActivity.textContent = data.activityStarted ? "Activity started" : "Start activity";
   analysisTitle.textContent = data.responseCount ? data.analysis.title : "Waiting for votes";
   analysisBody.textContent = data.responseCount
     ? data.analysis.body
@@ -54,10 +61,27 @@ function render(data) {
   renderRounds(data);
 }
 
-reset.addEventListener("click", async () => {
-  if (!confirm("Reset all class votes?")) return;
+function adminKey() {
   const key = localStorage.getItem("woolworthsAdminKey") || prompt("Teacher key, if configured:");
   if (key) localStorage.setItem("woolworthsAdminKey", key);
+  return key;
+}
+
+startActivity.addEventListener("click", async () => {
+  const key = adminKey();
+  const response = await fetch("/api/start", {
+    method: "POST",
+    headers: key ? { "x-admin-key": key } : {}
+  });
+  if (response.status === 401) {
+    localStorage.removeItem("woolworthsAdminKey");
+    alert("Start failed: teacher key is required or incorrect.");
+  }
+});
+
+reset.addEventListener("click", async () => {
+  if (!confirm("Reset all class votes?")) return;
+  const key = adminKey();
   const response = await fetch("/api/reset", {
     method: "POST",
     headers: key ? { "x-admin-key": key } : {}

@@ -214,6 +214,47 @@ button:disabled {
   box-shadow: var(--shadow);
 }
 
+.waitingPanel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 28px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.waitingPanel h2 {
+  margin-bottom: 10px;
+  font-size: clamp(2rem, 6vw, 3.6rem);
+  line-height: 1;
+}
+
+.joinedCount {
+  margin: 18px 0;
+  display: inline-grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: end;
+}
+
+.joinedCount span {
+  color: var(--green);
+  font-size: clamp(4rem, 16vw, 7rem);
+  font-weight: 900;
+  line-height: 0.82;
+}
+
+.joinedCount p {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-weight: 750;
+}
+
+.waitingPanel p:last-child {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 1.1rem;
+}
+
 .dashboard {
   width: min(1200px, calc(100% - 32px));
   margin: 0 auto;
@@ -301,6 +342,12 @@ button:disabled {
 .sectionTitle p {
   margin: 4px 0 0;
   color: var(--muted);
+}
+
+.statusLine {
+  margin: 12px 0 20px;
+  color: var(--muted);
+  font-weight: 750;
 }
 
 .bars {
@@ -477,6 +524,22 @@ button:disabled {
 
   .done {
     padding: 18px;
+  }
+
+  .waitingPanel {
+    padding: 20px;
+  }
+
+  .waitingPanel h2 {
+    font-size: 2rem;
+  }
+
+  .joinedCount {
+    margin: 14px 0;
+  }
+
+  .joinedCount p {
+    margin-bottom: 6px;
   }
 
   .done h2 {

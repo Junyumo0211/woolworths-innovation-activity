@@ -1,6 +1,8 @@
 const form = document.querySelector("#voteForm");
 const done = document.querySelector("#done");
 const editVote = document.querySelector("#editVote");
+const waiting = document.querySelector("#waiting");
+const studentJoinedCount = document.querySelector("#studentJoinedCount");
 
 const voterIdKey = "woolworthsInnovationVoterId";
 const voteKey = "woolworthsInnovationVote";
@@ -8,6 +10,7 @@ const voteKey = "woolworthsInnovationVote";
 let config = null;
 let choices = {};
 let currentStep = 0;
+let hasStarted = false;
 
 function voterId() {
   let id = localStorage.getItem(voterIdKey);
@@ -29,6 +32,8 @@ function optionCard(round, option, saved) {
 }
 
 function renderStep() {
+  waiting.hidden = true;
+  form.hidden = false;
   const round = config.rounds[currentStep];
   const isLast = currentStep === config.rounds.length - 1;
   form.innerHTML = `
@@ -61,10 +66,32 @@ function renderStep() {
   });
 }
 
+function showWaiting() {
+  waiting.hidden = false;
+  form.hidden = true;
+  done.hidden = true;
+}
+
+function updateJoinedCount(count) {
+  studentJoinedCount.textContent = count ?? 0;
+}
+
 async function load() {
   config = await fetch("/api/config").then((res) => res.json());
   choices = JSON.parse(localStorage.getItem(voteKey) || "null") || {};
-  renderStep();
+  hasStarted = config.activityStarted;
+
+  await fetch("/api/join", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ voterId: voterId() })
+  });
+
+  if (hasStarted) {
+    renderStep();
+  } else {
+    showWaiting();
+  }
 }
 
 form.addEventListener("submit", async (event) => {
@@ -111,3 +138,19 @@ editVote.addEventListener("click", () => {
 });
 
 load();
+
+const events = new EventSource("/api/events");
+events.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  updateJoinedCount(data.joinedCount);
+  if (data.activityStarted && !hasStarted) {
+    hasStarted = true;
+    renderStep();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  if (!data.activityStarted && hasStarted && done.hidden) {
+    hasStarted = false;
+    currentStep = 0;
+    showWaiting();
+  }
+};
