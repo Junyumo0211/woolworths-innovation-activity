@@ -335,7 +335,7 @@ const server = http.createServer(async (req, res) => {
       const payload = JSON.parse(await readBody(req));
       touchJoined(payload.voterId);
       broadcast();
-      sendJson(res, 200, { ok: true, activityStarted });
+      sendJson(res, 200, { ok: true, activityStarted, activityEnded, joinedCount: joined.size });
       return;
     }
 
