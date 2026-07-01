@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: woolworths-innovation-activity
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: ADMIN_KEY
+        generateValue: true
+      - key: PUBLIC_URL
+        sync: false

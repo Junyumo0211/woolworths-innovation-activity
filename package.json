@@ -1,0 +1,12 @@
+{
+  "name": "woolworths-innovation-activity",
+  "version": "1.0.0",
+  "private": true,
+  "description": "QR classroom voting activity for Woolworths IT innovation portfolio prioritisation.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  }
+}
